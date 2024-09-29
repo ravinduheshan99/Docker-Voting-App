@@ -9,7 +9,7 @@ A simple distributed application running across multiple Docker containers.
 - [Architecture](#architecture)
 - [Running the App](#running-the-app)
   - [Using Docker Compose](#using-docker-compose)
-  - [Running on Docker Swarm](#running-on-docker-swarm)
+  - [Manually Running with Docker](#manually-running-with-docker)
   - [Running in Kubernetes](#running-in-kubernetes)
 - [Environment Variables](#environment-variables)
 - [Additional Docker Commands](#additional-docker-commands)
@@ -53,21 +53,51 @@ You can stop the application with:
 docker compose down
 ```
 
-### Running on Docker Swarm
+### Manually Running with Docker
 
-To run this application on Docker Swarm, first initialize a swarm (if not already done):
+You can manually run the app by executing the following Docker commands step-by-step:
 
-```bash
-docker swarm init
-```
+1. Start Redis:
 
-Then, deploy the stack:
+    ```bash
+    docker run -d --name=redis redis
+    ```
 
-```bash
-docker stack deploy --compose-file docker-stack.yml vote
-```
+2. Start the voting app and link it to Redis:
 
-This will run the services in swarm mode.
+    ```bash
+    docker run -p 5000:80 --link redis:redis voting-app
+    ```
+
+3. Start the Postgres database:
+
+    ```bash
+    docker run -d --name=db postgres:15-alpine
+    ```
+
+4. Build the worker service:
+
+    ```bash
+    docker build . -t worker-app
+    ```
+
+5. Start the worker service and link it to Redis and Postgres:
+
+    ```bash
+    docker run -d --name=worker --link db:db --link redis:redis worker-app
+    ```
+
+6. Build the results app:
+
+    ```bash
+    docker build . -t result-app
+    ```
+
+7. Start the results app and link it to Postgres:
+
+    ```bash
+    docker run -p 5001:80 --link db:db result-app
+    ```
 
 ### Running in Kubernetes
 
